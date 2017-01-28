@@ -76,7 +76,7 @@ class HotelHelper
 
     public function insertHotelRoomsStatus()
     {
-        $room_status_arr = array('Available','Unavailable','Hold For Maintenance');
+        $room_status_arr = array('Active','Inactive','Temporary Inactive');
         foreach ($room_status_arr as $key => $value) {
             $obj_room_status = new HotelRoomStatus();
             $obj_room_status->status = $value;

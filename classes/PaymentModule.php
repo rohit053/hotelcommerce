@@ -177,7 +177,6 @@ abstract class PaymentModuleCore extends Module
 			PrestaShopLogger::addLog('PaymentModule::validateOrder - Order Status cannot be loaded', 3, null, 'Cart', (int)$id_cart, true);
 			throw new PrestaShopException('Can\'t load Order status');
 		}
-
 		if (!$this->active)
 		{
 			PrestaShopLogger::addLog('PaymentModule::validateOrder - Module is not active', 3, null, 'Cart', (int)$id_cart, true);
@@ -1094,12 +1093,16 @@ abstract class PaymentModuleCore extends Module
 							$cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] += 1;
 
 							$num_days = $cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'];
-							$vart_quant = (int)$cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] * $num_days;
+							$vart_quant = (int)$cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'];
 							
-							$amount = Product::getPriceStatic($type_value['product_id'], true, null, 6, null,	false, true, 1);
-							$amount *= $vart_quant;
+							//$amount = Product::getPriceStatic($type_value['product_id'], true, null, 6, null,	false, true, 1);
+							//$amount *= $vart_quant;
 
-							$cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $amount;
+
+							$roomTypeDateRangePrice = $obj_cart_bk_data->getRoomTypeTotalPrice($type_value['id_product'], $data_v['date_from'], $data_v['date_to']);
+							
+
+							$cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $roomTypeDateRangePrice['total_price_tax_incl']*$vart_quant;
 						}
 						else
 						{
@@ -1109,9 +1112,12 @@ abstract class PaymentModuleCore extends Module
 							$cart_htl_data[$type_key]['date_diff'][$date_join]['data_form'] = $data_v['date_from'];
 							$cart_htl_data[$type_key]['date_diff'][$date_join]['data_to'] = $data_v['date_to'];
 							$cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'] = $num_days;
-							$amount = Product::getPriceStatic($type_value['product_id'], true, null, 6, null, false, true, 1);
-							$amount *= $num_days;
-							$cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $amount;
+							/*$amount = Product::getPriceStatic($type_value['product_id'], true, null, 6, null, false, true, 1);
+							$amount *= $num_days;*/
+
+							$roomTypeDateRangePrice = $obj_cart_bk_data->getRoomTypeTotalPrice($type_value['id_product'], $data_v['date_from'], $data_v['date_to']);
+							
+							$cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $roomTypeDateRangePrice['total_price_tax_incl'];
 						}
 					}
 				}

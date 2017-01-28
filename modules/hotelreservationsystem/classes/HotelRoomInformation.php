@@ -6,6 +6,7 @@ class HotelRoomInformation extends ObjectModel
 	public $id_hotel;
 	public $room_num;
 	public $id_status;
+	public $disabled_dates;
 	public $floor;
 	public $comment;
 	public $date_add;
@@ -19,6 +20,7 @@ class HotelRoomInformation extends ObjectModel
 			'id_hotel' =>	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
 			'room_num' =>	array('type' => self::TYPE_STRING),
 			'id_status' =>	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'disabled_dates' => 	array('type' => self::TYPE_STRING),
 			'floor' =>		array('type' => self::TYPE_STRING),
 			'comment' =>	array('type' => self::TYPE_STRING),
 			'date_add' => 	array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
@@ -70,7 +72,7 @@ class HotelRoomInformation extends ObjectModel
 	 */
 	public function getHotelRoomInfo($id_product, $id_hotel, $is_getNum = 0)
 	{
-		$sql = "SELECT `id`, `id_hotel`, `room_num`, `id_status`, `floor`, `comment` FROM `"._DB_PREFIX_."htl_room_information` WHERE `id_product` = ".$id_product." AND `id_hotel` = ".$id_hotel;
+		$sql = "SELECT * FROM `"._DB_PREFIX_."htl_room_information` WHERE `id_product` = ".$id_product." AND `id_hotel` = ".$id_hotel;
 
 		$rm_info = Db::getInstance()->executeS($sql);
 

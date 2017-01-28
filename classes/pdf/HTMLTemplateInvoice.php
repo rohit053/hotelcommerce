@@ -367,7 +367,7 @@ class HTMLTemplateInvoiceCore extends HTMLTemplate
 
 					foreach ($order_bk_data as $data_k => $data_v) 
 					{
-						$date_join = strtotime($data_v['date_from']).strtotime($data_v['date_to']);
+						$date_join = strtotime($data_v['date_from']).strtotime($data_v['date_to']).$data_v['id'];
 
 						/*Product price when order was created*/
 						$order_details_obj = new OrderDetail($data_v['id_order_detail']);
@@ -422,10 +422,13 @@ class HTMLTemplateInvoiceCore extends HTMLTemplate
 							$cart_htl_data[$type_key]['date_diff'][$date_join]['data_form'] = $data_v['date_from'];
 							$cart_htl_data[$type_key]['date_diff'][$date_join]['data_to'] = $data_v['date_to'];
 							$cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'] = $num_days;
-							$amount = $unit_price_tax_excl;
-							$amount *= $num_days;
+
+							$roomTypeDateRangePrice = $obj_cart_bk_data->getRoomTypeTotalPrice($type_value['id_product'], $data_v['date_from'], $data_v['date_to']);
+
+							//$amount = $unit_price_tax_excl;
+							//$amount *= $num_days;
 							
-							$cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $amount;
+							$cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $roomTypeDateRangePrice['total_price_tax_incl'];
 		
 							// For order refund
 							$cart_htl_data[$type_key]['date_diff'][$date_join]['stage_name'] = $stage_name;

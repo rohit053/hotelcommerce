@@ -4,15 +4,15 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once 'define.php';
+include_once 'define.php';
 
-class hotelreservationsystem extends Module
+class HotelReservationSystem extends Module
 {
     const INSTALL_SQL_FILE = 'install.sql';
     public function __construct()
     {
         $this->name = 'hotelreservationsystem';
-        $this->version = '1.0.1';
+        $this->version = '1.0.2';
         $this->author = 'Webkul';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -182,7 +182,7 @@ class hotelreservationsystem extends Module
 
                             if (!$prod_adv_payment || (isset($prod_adv_payment['payment_type']) && $prod_adv_payment['payment_type'])) 
                             {
-                                $product_adv_amount = $obj_adv_payment->getProductMinAdvPaymentAmount($product['id_product'], 1);
+                                $room_adv_amount = $obj_adv_payment->getRoomMinAdvPaymentAmount($product['id_product'], $obj_cart_bk_data->date_from, $obj_cart_bk_data->date_to);
                                 $obj_customer_adv_product = new HotelCustomerAdvancedProductPayment();
                                 $obj_customer_adv_product->id_cart = $cart->id;
                                 $obj_customer_adv_product->id_room = $obj_cart_bk_data->id_room;
@@ -194,7 +194,7 @@ class hotelreservationsystem extends Module
                                 $obj_customer_adv_product->id_currency = $cart->id_currency;
                                 $obj_customer_adv_product->product_price_tax_incl = Product::getPriceStatic($product['id_product'], true);
                                 $obj_customer_adv_product->product_price_tax_excl = Product::getPriceStatic($product['id_product'], false);
-                                $obj_customer_adv_product->advance_payment_amount = $product_adv_amount;
+                                $obj_customer_adv_product->advance_payment_amount = $room_adv_amount;
                                 $obj_customer_adv_product->date_from = $obj_cart_bk_data->date_from;
                                 $obj_customer_adv_product->date_to = $obj_cart_bk_data->date_to;
                                 $obj_customer_adv_product->save();
@@ -254,6 +254,7 @@ class hotelreservationsystem extends Module
         $this->installTab('AdminHotelGeneralSettings', 'Hotel General configutaion', false, false);
         $this->installTab('AdminOtherHotelModulesSetting', 'other hotel configutaion', false, false);
         $this->installTab('AdminPaymentsSetting', 'payments configutaion', false, false);
+        $this->installTab('AdminHotelFeaturePricesSettings', 'feature pricing configuration', false, false);
 
         $this->installTab('AdminHotelReservationSystemManagement', 'Hotel Reservation System');
         $this->installTab('AdminHotelRoomsBooking', 'Book Now', 'AdminHotelReservationSystemManagement');
@@ -262,6 +263,7 @@ class hotelreservationsystem extends Module
         $this->installTab('AdminHotelFeatures', 'Manage Hotel Features', 'AdminHotelReservationSystemManagement');
         $this->installTab('AdminOrderRefundRules', 'Manage Order Refund Rules', 'AdminHotelReservationSystemManagement');
         $this->installTab('AdminOrderRefundRequests', 'Manage Order Refund Requests', 'AdminHotelReservationSystemManagement');
+
 
         return true;
     }
@@ -341,6 +343,7 @@ class hotelreservationsystem extends Module
         }
 
         // Set Default Values
+        Configuration::updateValue('HTL_FEATURE_PRICING_PRIORITY', 'specific_date;special_day;date_range');
         Configuration::updateValue('WK_GOOGLE_ACTIVE_MAP', 0);
         Configuration::updateValue('WK_MAP_HOTEL_ACTIVE_ONLY', 1);
 
@@ -367,6 +370,7 @@ class hotelreservationsystem extends Module
             `'._DB_PREFIX_.'htl_customer_adv_payment`,
             `'._DB_PREFIX_.'htl_advance_payment`,
             `'._DB_PREFIX_.'htl_room_type`,
+            `'._DB_PREFIX_.'htl_room_type_feature_pricing`,
             `'._DB_PREFIX_.'htl_order_restrict_date`');
     }
 
@@ -385,6 +389,7 @@ class hotelreservationsystem extends Module
         $this->uninstallTab('AdminOrderRestrictSettings');
         $this->uninstallTab('AdminPaymentsSetting');
         $this->uninstallTab('AdminOtherHotelModulesSetting');
+        $this->uninstallTab('AdminHotelFeaturePricesSettings');
         //End
         return true;
     }

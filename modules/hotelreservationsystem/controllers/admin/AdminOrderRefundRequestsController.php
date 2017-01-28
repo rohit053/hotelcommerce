@@ -173,8 +173,8 @@ class AdminOrderRefundRequestsController extends ModuleAdminController
             return;
         }
 
-        $date_from = $obj_refund->date_from;
-        $date_to = $obj_refund->date_to;
+        $date_from = date('Y-m-d', strtotime($obj_refund->date_from));
+        $date_to = date('Y-m-d', strtotime($obj_refund->date_to));
         $id_cart = Cart::getCartIdByOrderId($obj_refund->id_order);
         $id_product = $obj_refund->id_product;
         $id_currency = $obj_refund->id_currency;
@@ -200,9 +200,8 @@ class AdminOrderRefundRequestsController extends ModuleAdminController
             $currency_iso_code = $obj_currency->iso_code;
 
             //room info
-            $obj_htl_cart_bk_data = new HotelCartBookingData();
-            $rooms_ids = $obj_htl_cart_bk_data->getCustomerIdRoomsByIdCartIdProduct($id_cart, $id_product, $date_from, $date_to);
-
+            $objHtlBookingDetail = new HotelBookingDetail();
+            $rooms_ids = $objHtlBookingDetail->getCustomerIdRoomsByIdOrderIdProduct($id_order, $id_product, $date_from, $date_to);
             foreach ($rooms_ids as $key_rm => $val_rm) {
                 $obj_room_info = new HotelRoomInformation($val_rm['id_room']);
                 $rooms_names[] = $obj_room_info->room_num;
@@ -222,12 +221,15 @@ class AdminOrderRefundRequestsController extends ModuleAdminController
             $obj_customer_adv_product = new HotelCustomerAdvancedProductPayment();
             $prod_adv_payment = $obj_customer_adv_product->getProductAdvancePaymentDetails($obj_refund->id_order, $obj_refund->id_product);
             if ($prod_adv_payment)  {      
-                $obj_booking_detail = new HotelBookingDetail();
+                /*$obj_booking_detail = new HotelBookingDetail();
 
                 $book_days = $obj_booking_detail->getNumberOfDays($date_from, $date_to);
                 $qty_prod = ($obj_refund->num_rooms) * $book_days;
 
-                $adv_paid_amount = $qty_prod * $prod_adv_payment['advance_payment_amount'];
+                $adv_paid_amount = $qty_prod * $prod_adv_payment['advance_payment_amount'];*/
+                $obj_htl_adv_pay = new HotelAdvancedPayment();
+                $adv_paid_amount = $obj_htl_adv_pay->getRoomMinAdvPaymentAmount($obj_refund->id_product, $obj_refund->date_from, $obj_refund->date_to);
+
                 $way_of_payment = 'Advance Payment';
 
                 $adv_paid_amount = Tools::convertPrice($adv_paid_amount, new Currency($id_currency));
@@ -385,9 +387,10 @@ class AdminOrderRefundRequestsController extends ModuleAdminController
 
                 if ($days_before_cancellation >= $v_rules['days']) {
                     if ($way_of_payment == 'advancePayment') {
-                        $book_days = $obj_booking_detail->getNumberOfDays($obj_refund->date_from, $obj_refund->date_to);
-                        $qty_prod = ($obj_refund->num_rooms) * $book_days;
-                        $adv_paid_amount = $qty_prod * $prod_adv_payment['advance_payment_amount'];
+                        //$book_days = $obj_booking_detail->getNumberOfDays($obj_refund->date_from, $obj_refund->date_to);
+                        //$qty_prod = ($obj_refund->num_rooms) * $book_days;
+                        $adv_paid_amount = $obj_htl_adv_pay->getRoomMinAdvPaymentAmount($obj_refund->id_product, $obj_refund->date_from, $obj_refund->date_to);
+                        //$adv_paid_amount = $qty_prod * $prod_adv_payment['advance_payment_amount'];
                         $adv_paid_amount = Tools::convertPrice($adv_paid_amount, new Currency($id_currency));
                         $deduct_amount_val = $v_rules['deduction_value_adv_pay'];
                     } else {
@@ -426,9 +429,10 @@ class AdminOrderRefundRequestsController extends ModuleAdminController
         }
         if (!$deduction_amount) {
             if ($way_of_payment == 'advancePayment') {
-                $book_days = $obj_booking_detail->getNumberOfDays($obj_refund->date_from, $obj_refund->date_to);
-                $qty_prod = ($obj_refund->num_rooms) * $book_days;
-                $deduction_amount = $obj_htl_adv_pay->getProductMinAdvPaymentAmount($obj_refund->id_product, $qty_prod);
+                //$book_days = $obj_booking_detail->getNumberOfDays($obj_refund->date_from, $obj_refund->date_to);
+                //$qty_prod = ($obj_refund->num_rooms) * $book_days;
+                //$deduction_amount = $obj_htl_adv_pay->getProductMinAdvPaymentAmount($obj_refund->id_product, $qty_prod);
+                $deduction_amount = $obj_htl_adv_pay->getRoomMinAdvPaymentAmount($obj_refund->id_product, $obj_refund->date_from, $obj_refund->date_to);
                 if ($default_currency != $order_tran_curr) {
                     $deduction_amount = Tools::convertPriceFull($deduction_amount, new Currency($default_currency), new Currency($order_tran_curr));
                 }

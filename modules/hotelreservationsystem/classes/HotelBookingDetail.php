@@ -48,6 +48,11 @@
                 'date_add' => array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
                 'date_upd' => array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
         ), );
+        
+        public function __construct()
+        {
+            $this->moduleInstance = new Hotelreservationsystem();
+        }
 
         /**
          * [getBookingData :: To get Array of rooms data].
@@ -1002,6 +1007,291 @@
                 return $order_book_data;
             } else {
                 return false;
+            }
+        }
+
+        /**
+         * [getOrderInfoIdOrderIdProduct :: Returns Cart Info by id_product]
+         * @param  [int] $id_cart    [cart id]
+         * @param  [int] $id_product [product id]
+         * @return [array/false]     [returns all entries if data found else return false]
+         */
+        public static function getOrderInfoIdOrderIdProduct($id_order, $id_product)
+        {
+            return Db::getInstance()->executeS("SELECT * FROM `"._DB_PREFIX_."htl_booking_detail` WHERE `id_order`=".(int) $id_order." AND `id_product`=".(int) $id_product);
+        }
+
+        /**
+         * [getCustomerIdRoomsByIdOrderIdProduct :: To get array of rooms ids in the cart booked by a customer for a date range]
+         * @param  [int] $id_order    [Id of the id_order]
+         * @param  [int] $id_product [Id of the product]
+         * @param  [date] $date_from [Start date of the booking]
+         * @param  [date] $date_to   [End date of the booking]
+         * @return [array|false]     [If rooms found returns array containing rooms ids else returns false]
+         */
+        public function getCustomerIdRoomsByIdOrderIdProduct($id_order, $id_product, $date_from, $date_to)
+        {
+            return Db::getInstance()->executeS('SELECT `id_room` FROM `'._DB_PREFIX_.'htl_booking_detail` WHERE `id_order`='.(int) $id_order.' AND `id_product`='.(int) $id_product.' AND `date_from`=\''.$date_from.'\' AND `date_to`= \''.$date_to.'\'');
+        }
+
+        /**
+         * [getBookedRoomsByIdOrderDetail returns booking information of room type by id_order_detail]
+         * @param  [int] $id_order_detail [id_order_detail from 'order_detail' table]
+         * @param  [int] $id_product      [id of the product]
+         * @return [array|false]          [If information found returns array containing info ids else returns false]
+         */
+        public function getBookedRoomsByIdOrderDetail($id_order_detail, $id_product)
+        {
+            return Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'htl_booking_detail` WHERE `id_order_detail`='.(int) $id_order_detail.' AND `id_product`='.(int) $id_product);
+        }
+
+        /**
+         * [createQloAppsBookingByChannels create booking on Qloapps commig from different channels]
+         * @param  [array] $params [array containing details of orders]
+         * @return [boolean] [true if order is created or returns false]
+         */
+        public function createQloAppsBookingByChannels($params)
+        {
+            $this->errors = array();
+            $result['status'] = 'failed';
+            if ($params) {
+                $customerId = $this->createQloCustomerChannelCustomerInfo($params);
+                if ($customerId) {
+                    $params['id_customer'] = $customerId;
+                    $idAddress = $this->createQloCustomerAddressByChannelCustomerInfo($params);
+                    if ($idAddress) {
+                        $params['id_address'] = $idAddress;
+                        $idCart = $this->createQloCartForBookingFromChannel($params);
+                        $params['id_cart'] = $idCart;
+                        if ($idCart) {
+                            $idOrder = $this->ProcessCreateQloOrderForChannelBooking($params);
+                            if ($idOrder) {
+                                $result['status'] = 'success';
+                                $result['id_order'] = $idOrder;
+                                return $result;
+                            } else {
+                                $this->errors[] = $this->moduleInstance->l('Some error occurred while creating order', 'HotelBookingDetail');
+                            }
+                        } else {
+                            $this->errors[] = $this->moduleInstance->l('Some error occurred while creating cart', 'HotelBookingDetail');
+                        }
+                    } else {
+                        $this->errors[] = $this->moduleInstance->l('Some error occurred while creating customer address', 'HotelBookingDetail');
+                    }
+                } else {
+                    $this->errors[] = $this->moduleInstance->l('Some error occurred while creating customer.', 'HotelBookingDetail');
+                }
+            }
+            if ($result['status'] == 'failed') {
+                $result['errors'] = $this->errors;
+            }
+        }
+
+        /**
+         * [createQloCustomerChannelCustomerInfo create customer in Qloapps from supplied information from channel manager]
+         * @param  [array] $params [array containg customer information]
+         * @return [int|false]     [return customer Id if customer created successfully else returns false]
+         */
+        public function createQloCustomerChannelCustomerInfo($params)
+        {
+            if ($params) {
+                $customer_id = 0;
+                $firstName = $params['fname'];
+                $lastName = $params['lname'];
+                $customeremail = $firstName.$lastName.'@'.$params['channel_name'].'.com';
+                $customer_dtl = Customer::getCustomersByEmail($customeremail);
+
+                if (!$customer_dtl) {
+                    $channelName = $params['channel_name'];
+                    $objCustomer = new Customer();
+                    $objCustomer->firstname = $firstName;
+                    $objCustomer->lastname = $lastName;
+                    $objCustomer->email = $customeremail;
+                    $objCustomer->passwd = 'qloChannelCustomer';
+                    $objCustomer->save();
+                    $this->context->customer = $objCustomer;
+                    $customerId = $objCustomer->id;
+                } else {
+                    $customerId = $customer_dtl[0]['id_customer']; //if already exist customer
+                }
+                return $customerId;
+            }
+            return false;
+        }
+
+        /**
+         * [createQloCustomerAddressByChannelCustomerInfo create customer's Address in Qloapps from supplied information from channel manager]
+         * @param  [array] $params [array containg customer information]
+         * @return [int|false]     [return customer address Id if address created successfully else returns false]
+         */
+        public function createQloCustomerAddressByChannelCustomerInfo($params)
+        {
+            $customerId = $params['id_customer'];
+            if ($customerId) {
+                $firstName = $params['fname'];
+                $lastName = $params['lname'];
+                //Create customer address
+                $objCustomerAddress = new Address();                        
+                $objCustomerAddress->id_country = Country::getByIso('US');
+                $objCustomerAddress->id_state = State::getIdByIso('NY');
+                $objCustomerAddress->id_customer = $customerId;
+                $objCustomerAddress->alias = 'My Dummy address';
+                $objCustomerAddress->lastname = $lastName;
+                $objCustomerAddress->firstname = $firstName;
+                $objCustomerAddress->address1 = 'New York, US';
+                $objCustomerAddress->postcode = '10001';
+                $objCustomerAddress->city = 'New York';
+                $objCustomerAddress->phone_mobile = 0987654321;
+                $objCustomerAddress->save();
+                return $objCustomerAddress->id;
+            }
+            return false;
+        }
+
+        /**
+         * [createQloCartForBookingFromChannel create cart in Qloapps from supplied cart information from channel manager]
+         * @param  [array] $params [array containg channel cart information]
+         * @return [int|false]     [return cart Id if cart created successfully else returns false]
+         */
+        public function createQloCartForBookingFromChannel($params)
+        {
+            $this->context = Context::getContext();
+            if ($params) {
+                if (!isset($this->context->cookie->id_guest)) {
+                    Guest::setNewGuest($this->context->cookie);
+                }
+                $this->context->cart = new Cart();
+                $idCustomer = (int)$params['id_customer'];
+                $customer = new Customer((int)$idCustomer);
+                $this->context->customer = $customer;
+                $this->context->cart->id_customer = $idCustomer;
+                if (Validate::isLoadedObject($this->context->cart) && $this->context->cart->OrderExists()) {
+                    return;
+                }
+                if (!$this->context->cart->secure_key){
+                    $this->context->cart->secure_key = $this->context->customer->secure_key;
+                }
+                if (!$this->context->cart->id_shop){
+                    $this->context->cart->id_shop = (int)Configuration::get('PS_SHOP_DEFAULT');
+                }
+                if (!$this->context->cart->id_lang){
+                    $this->context->cart->id_lang = Configuration::get('PS_LANG_DEFAULT');
+                }
+                if (!$this->context->cart->id_currency) {
+                    $this->context->cart->id_currency = Configuration::get('PS_CURRENCY_DEFAULT');
+                }
+
+                $addresses = $customer->getAddresses((int)$this->context->cart->id_lang);
+
+                if (!$this->context->cart->id_address_invoice && isset($addresses[0])){
+                    $this->context->cart->id_address_invoice = (int)$addresses[0]['id_address'];
+                }
+                if (!$this->context->cart->id_address_delivery && isset($addresses[0])){
+                    $this->context->cart->id_address_delivery = $addresses[0]['id_address'];
+                }
+                $this->context->cart->setNoMultishipping();
+
+                if ($this->context->cart->save()) {
+                    return $this->context->cart->id;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * [ProcessCreateQloOrderForChannelBooking create order for the booking created in the channel manager]
+         * @param  [array] $params [array containg channel cart information]
+         * @return [int|false]     [return order Id if order created successfully else returns false]
+         */
+        public function ProcessCreateQloOrderForChannelBooking($params)
+        {
+            $this->context = Context::getContext();
+            $this->errors = array();
+            $id_cart = $params['id_cart'];
+            $date_from = date("Y-m-d", strtotime($params['date_from']));
+            $date_to = date("Y-m-d", strtotime($params['date_to']));
+            $id_product = $params['id_room_type'];
+
+            $obj_booking_dtl = new HotelBookingDetail();
+            $num_day = $obj_booking_dtl->getNumberOfDays($date_from, $date_to); //quantity of product
+            $product = new Product($id_product, false, Configuration::get('PS_LANG_DEFAULT'));
+            $obj_room_type = new HotelRoomType();
+            $room_info_by_id_product = $obj_room_type->getRoomTypeInfoByIdProduct($id_product);
+            if ($room_info_by_id_product) {
+                $id_hotel = $room_info_by_id_product['id_hotel'];
+
+                if ($id_hotel) {
+                    /*Check Order restrict condition before adding in to cart*/
+                    $max_order_date = HotelOrderRestrictDate::getMaxOrderDate($id_hotel);
+                    if ($max_order_date) {
+                        $max_order_date = date('Y-m-d', strtotime($max_order_date));
+                        if ($max_order_date < $date_from || $max_order_date < $date_to) {
+                            $this->errors[] = $this->moduleInstance->l('You can\'t Book room after date ', 'HotelBookingDetail').$max_order_date;
+                        }
+                    }
+                    /*END*/
+                    $obj_booking_dtl = new HotelBookingDetail();
+                    $hotel_room_data = $obj_booking_dtl->DataForFrontSearch($date_from, $date_to, $id_hotel, $id_product, 1, 0, 0, -1, 0, 0, $id_cart, $this->context->cookie->id_guest);
+                    $total_available_rooms = $hotel_room_data['stats']['num_avail'];
+
+                    if ($total_available_rooms < $params['req_qty']) {
+                        $this->errors[] = $this->moduleInstance->l('Required number of rooms are not available', 'HotelBookingDetail');
+                    }
+                } else {
+                    $this->errors[] = $this->moduleInstance->l('Hotel Not found.', 'HotelBookingDetail');
+                }
+            } else {
+                $this->errors[] = $this->moduleInstance->l('Rooms not found for this product.', 'HotelBookingDetail');
+            }
+            if (!count($this->errors)) {
+                $unit_price = Product::getPriceStatic($id_product, HotelBookingDetail::useTax(), null, 6, null, false, true, $num_day*$params['req_qty']);
+
+                $direction = 'up';
+
+                $update_quantity = $this->context->cart->updateQty($num_day*$params['req_qty'], $id_product, null, false, $direction);
+
+                /*
+                * To add Rooms in hotel cart
+                */
+                $id_customer = $this->context->cart->id_customer;
+                $id_currency = $this->context->cart->id_currency;
+
+                $hotel_room_info_arr = $hotel_room_data['rm_data'][0]['data']['available'];
+                $chkQty = 0;
+                foreach ($hotel_room_info_arr as $key_hotel_room_info => $val_hotel_room_info) {
+                    if ($chkQty < $params['req_qty']) {
+                        $obj_htl_cart_booking_data = new HotelCartBookingData();
+                        $obj_htl_cart_booking_data->id_cart = $this->context->cart->id;
+                        $obj_htl_cart_booking_data->id_guest = $this->context->cookie->id_guest;
+                        $obj_htl_cart_booking_data->id_customer = $id_customer;
+                        $obj_htl_cart_booking_data->id_currency = $id_currency;
+                        $obj_htl_cart_booking_data->id_product = $val_hotel_room_info['id_product'];
+                        $obj_htl_cart_booking_data->id_room = $val_hotel_room_info['id_room'];
+                        $obj_htl_cart_booking_data->id_hotel = $val_hotel_room_info['id_hotel'];
+                        $obj_htl_cart_booking_data->booking_type = 1;
+                        $obj_htl_cart_booking_data->quantity = $num_day;
+                        $obj_htl_cart_booking_data->date_from = $date_from;
+                        $obj_htl_cart_booking_data->date_to = $date_to;
+                        $obj_htl_cart_booking_data->save();
+                        ++$chkQty;
+                    } else {
+                        break;
+                    }
+                }
+                $channelOrderPayment = new ChannelOrderPayment();
+                $total_amount = (float)$this->context->cart->getOrderTotal(true, Cart::BOTH);
+                //$this->module = Module::getInstanceByName('hotelreservationsystem');
+                $orderCreated = $channelOrderPayment->validateOrder((int) $this->context->cart->id, (int) 2, (float) $total_amount, 'Channel Booking', null, array(), null, false, $this->context->cart->secure_key);
+                if ($orderCreated) {
+                    $idOrder = Order::getOrderByCartId($this->context->cart->id);
+                    if ($idOrder) {
+                        return $idOrder;
+                    } else {
+                        return false;    
+                    }
+                } else {
+                    return false;
+                }
             }
         }
     }

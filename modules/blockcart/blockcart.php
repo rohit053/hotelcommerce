@@ -467,18 +467,24 @@ class blockcart extends Module
                     $cart_htl_data[$type_key]['children'] = $rm_dtl['children'];
                     if (isset($cart_bk_data) && $cart_bk_data) {
                         foreach ($cart_bk_data as $data_k => $data_v) {
-                            $date_join = strtotime($data_v['date_from']).strtotime($data_v['date_to']);
+                            $date_join = strtotime($data_v['date_from']).strtotime($data_v['date_to']).$data_v['id'];
 
                             if (isset($cart_htl_data[$type_key]['date_diff'][$date_join])) {
                                 $cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] += 1;
                                 $total_rooms += 1;
                                 $num_days = $cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'];
-                                $vart_quant = (int) $cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] * $num_days;
+                                $vart_quant = (int) $cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'];
 
-                                $amount = Product::getPriceStatic($type_value['id_product'], $price_tax, null, 6, null,    false, true, 1);
-                                $amount *= $vart_quant;
+                                //// By webkul New way to calculate product prices with feature Prices
+                                $roomTypeDateRangePrice = $obj_cart_bk_data->getRoomTypeTotalPrice($type_value['id_product'], $data_v['date_from'], $data_v['date_to']);
+                                if (!$price_tax) {
+                                    $amount = $roomTypeDateRangePrice['total_price_tax_excl'];
+                                } else {
+                                    $amount = $roomTypeDateRangePrice['total_price_tax_incl'];
+                                }
+                                //END
 
-                                $cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $amount;
+                                $cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $amount * $vart_quant;
                             } else {
                                 $num_days = $obj_htl_bk_dtl->getNumberOfDays($data_v['date_from'], $data_v['date_to']);
                                 $total_rooms += 1;
@@ -486,8 +492,16 @@ class blockcart extends Module
                                 $cart_htl_data[$type_key]['date_diff'][$date_join]['data_form'] = date('Y-m-d', strtotime($data_v['date_from']));
                                 $cart_htl_data[$type_key]['date_diff'][$date_join]['data_to'] = date('Y-m-d', strtotime($data_v['date_to']));
                                 $cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'] = $num_days;
-                                $amount = Product::getPriceStatic($type_value['id_product'], $price_tax, null, 6, null, false, true, 1);
-                                $amount *= $num_days;
+                                
+                                // By webkul New way to calculate product prices with feature Prices
+                                $roomTypeDateRangePrice = $obj_cart_bk_data->getRoomTypeTotalPrice($type_value['id_product'], $data_v['date_from'], $data_v['date_to']);
+                                if (!$price_tax) {
+                                    $amount = $roomTypeDateRangePrice['total_price_tax_excl'];
+                                } else {
+                                    $amount = $roomTypeDateRangePrice['total_price_tax_incl'];
+                                }
+                                // END
+
                                 $cart_htl_data[$type_key]['date_diff'][$date_join]['amount'] = $amount;
                             }
                         }

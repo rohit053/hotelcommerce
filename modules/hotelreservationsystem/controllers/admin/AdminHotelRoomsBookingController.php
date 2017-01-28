@@ -288,12 +288,12 @@ class AdminHotelRoomsBookingController extends ModuleAdminController
 
 		$this->context->cart->updateQty($num_day, $id_product, null, false, $direction);
 
-		$total_amount = $this->context->cart->getOrderTotal();
 
 		$id_cart = $this->context->cart->id;
 		$id_guest = $this->context->cookie->id_guest;
 
 		$obj_cart_book_data = new HotelCartBookingData();
+		$total_amount = $this->context->cart->getOrderTotal();
 		if ($opt) 
 		{
 			$obj_cart_book_data->id_cart = 		$id_cart;
@@ -310,13 +310,17 @@ class AdminHotelRoomsBookingController extends ModuleAdminController
 			$obj_cart_book_data->save();
 
 			$obj_rm_info = new HotelRoomInformation($id_room); 
-
+			$total_amount = $this->context->cart->getOrderTotal();
 			$rms_in_cart = $obj_cart_book_data->getCountRoomsInCart($id_cart, $id_guest);
 			
 			$booking_stats = $obj_booking_dtl->getBookingData($search_date_from, $search_date_to, $id_hotel, $search_id_prod, 0, 0, 1, 1, 1, 1, 0, 0, $id_cart, $id_guest, 1);
 
-			$rm_amount = $unit_price * (int)$num_day;
-			$rm_amount = Tools::ps_round($rm_amount, 2);
+			//$rm_amount = $unit_price * (int)$num_day;
+			//$rm_amount = Tools::ps_round($rm_amount, 2);
+			//
+			//// By webkul New way to calculate product prices with feature Prices
+            $roomTypeDateRangePrice = $obj_cart_book_data->getRoomTypeTotalPrice($id_product, $date_from, $date_to);
+            $rm_amount = $roomTypeDateRangePrice['total_price_tax_incl'];
 			
 			$cart_data = array('room_num' => $obj_rm_info->room_num,
 								'room_type' => Product::getProductName((int)$id_product),
@@ -336,6 +340,7 @@ class AdminHotelRoomsBookingController extends ModuleAdminController
 		}
 		else
 		{
+			$total_amount = $this->context->cart->getOrderTotal();
 			$data_dlt = $obj_cart_book_data->deleteRowById($id_cart_book_data);
 			if ($data_dlt) 
 			{

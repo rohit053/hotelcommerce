@@ -357,8 +357,13 @@ class OrderDetailControllerCore extends FrontController
                             $cart_htl_data[$type_key]['adult'] = $rm_dtl['adult'];
                             $cart_htl_data[$type_key]['children'] = $rm_dtl['children'];
 
+                            // by webkul to calculate rates of the product from hotelreservation syatem tables with feature prices....
+
+                            $hotelCartBookingData = new HotelCartBookingData();
+                            //END
+
                             foreach ($order_bk_data as $data_k => $data_v) {
-                                $date_join = strtotime($data_v['date_from']).strtotime($data_v['date_to']);
+                                $date_join = strtotime($data_v['date_from']).strtotime($data_v['date_to']).$data_v['id'];
 
                                 /*Product price when order was created*/
                                 $order_details_obj = new OrderDetail($data_v['id_order_detail']);
@@ -386,13 +391,14 @@ class OrderDetailControllerCore extends FrontController
                                     $cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] += 1;
 
                                     $num_days = $cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'];
-                                    $vart_quant = (int) $cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] * $num_days;
+                                    $var_quant = (int) $cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'];
 
-                                    $amount_tax_excl = $unit_price_tax_excl * $vart_quant;
-                                    $amount_tax_incl = $unit_price_tax_incl * $vart_quant;
+                                    //$amount_tax_excl = $unit_price_tax_excl * $var_quant;
+                                    //$amount_tax_incl = $unit_price_tax_incl * $var_quant;
 
-                                    $cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_incl'] = $amount_tax_incl;
-                                    $cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_excl'] = $amount_tax_excl;
+                                    $roomTypeDateRangePrice = $hotelCartBookingData->getRoomTypeTotalPrice($type_value['id_product'], $data_v['date_from'], $data_v['date_to']);
+                                    $cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_incl'] = $roomTypeDateRangePrice['total_price_tax_incl']*$var_quant;
+                                    $cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_excl'] = $roomTypeDateRangePrice['total_price_tax_excl']*$var_quant;
                                     $cart_htl_data[$type_key]['date_diff'][$date_join]['is_backorder'] = $data_v['is_back_order'];
                                     if ($data_v['is_back_order']) {
                                         $any_back_order = 1;
@@ -407,11 +413,12 @@ class OrderDetailControllerCore extends FrontController
                                     $cart_htl_data[$type_key]['date_diff'][$date_join]['data_to'] = $data_v['date_to'];
                                     $cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'] = $num_days;
 
-                                    $amount_tax_excl = $unit_price_tax_excl * $num_days;
-                                    $amount_tax_incl = $unit_price_tax_incl * $num_days;
+                                    //$amount_tax_excl = $unit_price_tax_excl * $num_days;
+                                    //$amount_tax_incl = $unit_price_tax_incl * $num_days;
 
-                                    $cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_incl'] = $amount_tax_incl;
-                                    $cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_excl'] = $amount_tax_excl;
+                                    $roomTypeDateRangePrice = $hotelCartBookingData->getRoomTypeTotalPrice($type_value['id_product'], $data_v['date_from'], $data_v['date_to']);
+                                    $cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_incl'] = $roomTypeDateRangePrice['total_price_tax_incl'];
+                                    $cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_excl'] = $roomTypeDateRangePrice['total_price_tax_excl'];
                                     $cart_htl_data[$type_key]['date_diff'][$date_join]['is_backorder'] = $data_v['is_back_order'];
                                     if ($data_v['is_back_order']) {
                                         $any_back_order = 1;

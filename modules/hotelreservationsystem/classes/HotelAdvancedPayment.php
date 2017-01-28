@@ -41,6 +41,80 @@ class HotelAdvancedPayment extends ObjectModel
 		return false;
 	}
 
+
+	public function getProductMinAdvPaymentAmountByIdCart($id_cart, $id_product, $adv_global_percent = 0, $adv_global_tax_inc = 0)
+	{
+		if (!$adv_global_percent) {
+			$adv_global_percent = Configuration::get('WK_ADVANCED_PAYMENT_GLOBAL_MIN_AMOUNT');
+		}
+
+		if (!$adv_global_tax_inc) {
+			$adv_global_tax_inc = Configuration::get('WK_ADVANCED_PAYMENT_INC_TAX');
+		}
+		$price_with_tax = Product::getPriceStatic($id_product, true, null, 6, null, false, true);
+		$price_without_tax = Product::getPriceStatic($id_product, false, null, 6, null, false, true);
+		$hotelCartBookingData = new HotelCartBookingData();
+		$roomTypesByIdProduct = $hotelCartBookingData->getCartInfoIdCartIdProduct((int) $id_cart, (int)$id_product);
+		$totalPriceByProductTaxIncl = 0;
+		$totalPriceByProductTaxExcl = 0;
+		$productCartQuantity = 0;
+		foreach ($roomTypesByIdProduct as $key => $cartRoomInfo) {
+			$roomTotalPrice = $hotelCartBookingData->getRoomTypeTotalPrice($cartRoomInfo['id_product'], $cartRoomInfo['date_from'], $cartRoomInfo['date_to']);
+			$totalPriceByProductTaxIncl += $roomTotalPrice['total_price_tax_incl'];
+        	$totalPriceByProductTaxExcl += $roomTotalPrice['total_price_tax_excl'];
+        	$productCartQuantity += $cartRoomInfo['quantity'];
+		}
+		$prod_adv = $this->getIdAdvPaymentByIdProduct($id_product);
+		if ($prod_adv) {
+			if ($prod_adv['active']) {
+				if ($prod_adv['calculate_from']) { // Advanced payment is calculated by product advanced payment setting
+					if ($prod_adv['payment_type'] == 1) { // Percentage
+						if ($prod_adv['tax_include']) {
+							$prod_price = $totalPriceByProductTaxIncl;
+						} else {
+							$prod_price = $totalPriceByProductTaxExcl;
+						}
+						$adv_amount = ($prod_price*$prod_adv['value'])/100 ;
+					} else {
+						$prod_adv['value'] = Tools::convertPrice($prod_adv['value']);
+
+						if ($prod_adv['tax_include']) { //Fixed
+							if ($price_with_tax < $prod_adv['value']) {
+								$adv_amount = $totalPriceByProductTaxIncl;
+							} else {
+								$adv_amount = $prod_adv['value'] * $productCartQuantity;
+							}
+						} else {
+							if ($price_without_tax < $prod_adv['value']) {
+								$adv_amount = $price_without_tax * $productCartQuantity;
+							} else {
+								$adv_amount = $prod_adv['value'] * $productCartQuantity;
+							}
+						}
+					}
+				} else { // Advanced payment is calculated by Global advanced payment setting
+					if ($adv_global_tax_inc) {
+						$adv_amount = ($totalPriceByProductTaxIncl*$adv_global_percent)/100 ;
+					} else {
+						$adv_amount = ($totalPriceByProductTaxExcl*$adv_global_percent)/100 ;
+					}
+				}
+			} else {
+				$prod_price = $totalPriceByProductTaxIncl;
+				$adv_amount = $prod_price;
+			}
+		} else {
+			if ($adv_global_tax_inc) {
+				$adv_amount = ($totalPriceByProductTaxIncl*$adv_global_percent)/100 ;
+			} else {
+				$adv_amount = ($totalPriceByProductTaxExcl*$adv_global_percent)/100 ;
+			}
+		}
+
+		return $adv_amount;
+	}
+
+
 	/**
 	 * [getProductMinAdvPaymentAmount :: To get minimum advance payment amount paid by the customer for a particular product for a given quantities product]
 	 * @param  [int]  $id_product         [ID of the product which minimum advance payment amount paid by the customer for given quantities you want]
@@ -140,11 +214,8 @@ class HotelAdvancedPayment extends ObjectModel
 		$adv_global_percent = Configuration::get('WK_ADVANCED_PAYMENT_GLOBAL_MIN_AMOUNT');
 		$adv_global_tax_inc = Configuration::get('WK_ADVANCED_PAYMENT_INC_TAX');
 
-		foreach ($cart_product as $prod_key => $cart_prod) 
-		{
-			$prod_qty = Cart::getProductQtyInCart($context->cart->id, $cart_prod['id_product']);
-
-			$adv_amount += $this->getProductMinAdvPaymentAmount($cart_prod['id_product'], $prod_qty, $adv_global_percent ,$adv_global_tax_inc);
+		foreach ($cart_product as $prod_key => $cart_prod) {
+			$adv_amount += $this->getProductMinAdvPaymentAmountByIdCart($context->cart->id, $cart_prod['id_product']);
 		}
 
 		return $adv_amount;
@@ -160,5 +231,76 @@ class HotelAdvancedPayment extends ObjectModel
 	        return $freeAdvancePayment;
         }
 		return false;
+	}
+
+	public function getRoomMinAdvPaymentAmount($id_product, $date_from, $date_to)
+	{
+		$date_from = date('Y-m-d', strtotime($date_from));
+		$date_to = date('Y-m-d', strtotime($date_to));
+		if (!$adv_global_percent) {
+			$adv_global_percent = Configuration::get('WK_ADVANCED_PAYMENT_GLOBAL_MIN_AMOUNT');
+		}
+
+		if (!$adv_global_tax_inc) {
+			$adv_global_tax_inc = Configuration::get('WK_ADVANCED_PAYMENT_INC_TAX');
+		}
+		$price_with_tax = Product::getPriceStatic($id_product, true, null, 6, null, false, true);
+		$price_without_tax = Product::getPriceStatic($id_product, false, null, 6, null, false, true);
+		$hotelCartBookingData = new HotelCartBookingData();
+		$productCartQuantity = 0;
+		$roomTotalPrice = $hotelCartBookingData->getRoomTypeTotalPrice($id_product, $date_from, $date_to);
+		$totalPriceByProductTaxIncl = $roomTotalPrice['total_price_tax_incl'];
+    	$totalPriceByProductTaxExcl = $roomTotalPrice['total_price_tax_excl'];
+    	$obj_booking_detail = new HotelBookingDetail();
+		$productCartQuantity = $obj_booking_detail->getNumberOfDays($date_from, $date_to);
+
+		$prod_adv = $this->getIdAdvPaymentByIdProduct($id_product);
+		if ($prod_adv) {
+			if ($prod_adv['active']) {
+				if ($prod_adv['calculate_from']) { // Advanced payment is calculated by product advanced payment setting
+					if ($prod_adv['payment_type'] == 1) { // Percentage
+						if ($prod_adv['tax_include']) {
+							$prod_price = $totalPriceByProductTaxIncl;
+						} else {
+							$prod_price = $totalPriceByProductTaxExcl;
+						}
+						$adv_amount = ($prod_price*$prod_adv['value'])/100 ;
+					} else {
+						$prod_adv['value'] = Tools::convertPrice($prod_adv['value']);
+
+						if ($prod_adv['tax_include']) { //Fixed
+							if ($price_with_tax < $prod_adv['value']) {
+								$adv_amount = $totalPriceByProductTaxIncl;
+							} else {
+								$adv_amount = $prod_adv['value'] * $productCartQuantity;
+							}
+						} else {
+							if ($price_without_tax < $prod_adv['value']) {
+								$adv_amount = $price_without_tax * $productCartQuantity;
+							} else {
+								$adv_amount = $prod_adv['value'] * $productCartQuantity;
+							}
+						}
+					}
+				} else { // Advanced payment is calculated by Global advanced payment setting
+					if ($adv_global_tax_inc) {
+						$adv_amount = ($totalPriceByProductTaxIncl*$adv_global_percent)/100 ;
+					} else {
+						$adv_amount = ($totalPriceByProductTaxExcl*$adv_global_percent)/100 ;
+					}
+				}
+			} else {
+				$prod_price = $totalPriceByProductTaxIncl;
+				$adv_amount = $prod_price;
+			}
+		} else {
+			if ($adv_global_tax_inc) {
+				$adv_amount = ($totalPriceByProductTaxIncl*$adv_global_percent)/100 ;
+			} else {
+				$adv_amount = ($totalPriceByProductTaxExcl*$adv_global_percent)/100 ;
+			}
+		}
+
+		return $adv_amount;
 	}
 }
