@@ -20,7 +20,7 @@
         public $check_out;
         public $date_from;
         public $date_to;
-        public $total_price_tax_excl;    // Total price paid for this date range for this room type  
+        public $total_price_tax_excl;    // Total price paid for this date range for this room type
         public $total_price_tax_incl;    // Total price paid for this date range for this room type
         public $is_refunded;
         public $is_back_order;
@@ -52,7 +52,7 @@
                 'date_add' => array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
                 'date_upd' => array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
         ), );
-        
+
         public function __construct($id = null, $id_lang = null, $id_shop = null)
         {
             $this->moduleInstance = Module::getInstanceByName('hotelreservationsystem');
@@ -118,7 +118,7 @@
 
                     if ($search_cart_rms) {
                         if ($id_cart && $id_guest) {
-                            $sql = 'SELECT cbd.`id_product`, cbd.`id_room`, cbd.`id_hotel`, cbd.`booking_type`, cbd.`comment`, rf.`room_num`, cbd.`date_from`, cbd.`date_to` 
+                            $sql = 'SELECT cbd.`id_product`, cbd.`id_room`, cbd.`id_hotel`, cbd.`booking_type`, cbd.`comment`, rf.`room_num`, cbd.`date_from`, cbd.`date_to`
                                 FROM `'._DB_PREFIX_.'htl_cart_booking_data` AS cbd
                                 INNER JOIN `'._DB_PREFIX_.'htl_room_information` AS rf ON (rf.id = cbd.id_room)
                                 WHERE cbd.id_hotel='.$hotel_id.' AND cbd.id_product ='.$room_type['id_product'].' AND cbd.id_cart = '.$id_cart.' AND cbd.id_guest ='.$id_guest.' AND cbd.is_refunded = 0 AND cbd.is_back_order = 0';
@@ -130,7 +130,7 @@
                     }
 
                     if ($search_booked) {
-                        $sql = 'SELECT bd.id_product, bd.id_room, bd.id_hotel, bd.id_customer, bd.booking_type, bd.id_status AS booking_status, bd.comment, rf.room_num, bd.date_from, bd.date_to 
+                        $sql = 'SELECT bd.id_product, bd.id_room, bd.id_hotel, bd.id_customer, bd.booking_type, bd.id_status AS booking_status, bd.comment, rf.room_num, bd.date_from, bd.date_to
 							FROM `'._DB_PREFIX_.'htl_booking_detail` AS bd
 							INNER JOIN `'._DB_PREFIX_.'htl_room_information` AS rf ON (rf.id = bd.id_room)
 							WHERE bd.id_hotel='.$hotel_id.' AND bd.id_product ='.$room_type['id_product']." AND bd.date_from <= '$date_from' AND bd.date_to >='$date_to' AND bd.is_refunded = 0 AND bd.is_back_order = 0";
@@ -158,11 +158,11 @@
                     }
 
                     if ($search_unavai) {
-                        $sql1 = 'SELECT `id_product`, `id_hotel`, `room_num`, `comment` AS `room_comment` 
-                                FROM `'._DB_PREFIX_.'htl_room_information` 
+                        $sql1 = 'SELECT `id_product`, `id_hotel`, `room_num`, `comment` AS `room_comment`
+                                FROM `'._DB_PREFIX_.'htl_room_information`
                                 WHERE `id_hotel`='.$hotel_id.' AND `id_product` ='.$room_type['id_product'].' AND `id_status` = 2';
 
-                        $sql2 = 'SELECT hri.`id_product`, hri.`id_hotel`, hri.`room_num`, hri.`comment` AS `room_comment` 
+                        $sql2 = 'SELECT hri.`id_product`, hri.`id_hotel`, hri.`room_num`, hri.`comment` AS `room_comment`
                                 FROM `'._DB_PREFIX_.'htl_room_information` AS hri
                                 INNER JOIN `'._DB_PREFIX_.'htl_room_disable_dates` AS hrdd ON (hrdd.id_room_type = hri.id_product AND hrdd.	id_room = hri.id)
                                 WHERE hri.`id_hotel`='.$hotel_id.' AND hri.`id_product` ='.$room_type['id_product'].' AND hri.`id_status` = 3 AND hrdd.`date_from` <= \''.pSql($date_from).'\' AND hrdd.`date_to` >= \''.pSql($date_to).'\'';
@@ -174,25 +174,25 @@
                     }
 
                     if ($search_available) {
-                        $exclude_ids = 'SELECT `id_room` 
-								FROM '._DB_PREFIX_."htl_booking_detail 
+                        $exclude_ids = 'SELECT `id_room`
+								FROM '._DB_PREFIX_."htl_booking_detail
 								WHERE is_back_order = 0 AND is_refunded = 0 AND ((date_from <= '$date_from' AND date_to > '$date_from' AND date_to <= '$date_to') OR (date_from > '$date_from' AND date_to < '$date_to') OR (date_from >= '$date_from' AND date_from < '$date_to' AND date_to >= '$date_to') OR (date_from < '$date_from' AND date_to > '$date_to'))";
 
                         if (!empty($id_cart) && !empty($id_guest)) {
                             $exclude_ids .= ' UNION
-								SELECT `id_room` 
-								FROM '._DB_PREFIX_.'htl_cart_booking_data 
+								SELECT `id_room`
+								FROM '._DB_PREFIX_.'htl_cart_booking_data
 								WHERE id_cart='.$id_cart.' AND id_guest='.$id_guest." AND is_refunded = 0 AND  is_back_order = 0 AND ((date_from <= '$date_from' AND date_to > '$date_from' AND date_to <= '$date_to') OR (date_from > '$date_from' AND date_to < '$date_to') OR (date_from >= '$date_from' AND date_from < '$date_to' AND date_to >= '$date_to') OR (date_from < '$date_from' AND date_to > '$date_to'))";
                         }
 
                         // For excludes temporary disable rooms
                         $exclude_ids .= ' UNION
-                            SELECT hri.`id` AS id_room 
-                            FROM '._DB_PREFIX_.'htl_room_information AS hri 
+                            SELECT hri.`id` AS id_room
+                            FROM '._DB_PREFIX_.'htl_room_information AS hri
                             INNER JOIN `'._DB_PREFIX_.'htl_room_disable_dates` AS hrdd ON (hrdd.`id_room_type` = hri.`id_product` AND hrdd.`id_room` = hri.`id`)
                             WHERE hri.`id_hotel`='.$hotel_id.' AND hri.`id_product` ='.$room_type['id_product'].' AND hri.`id_status` = 3 AND (hrdd.`date_from` < \''.pSql($date_to).'\' AND hrdd.`date_to` > \''.pSql($date_from).'\')';
 
-                        $sql = 'SELECT ri.`id` AS `id_room`, ri.`id_product`, ri.`id_hotel`, ri.`room_num`, ri.`comment` AS `room_comment` 
+                        $sql = 'SELECT ri.`id` AS `id_room`, ri.`id_product`, ri.`id_hotel`, ri.`room_num`, ri.`comment` AS `room_comment`
 							FROM `'._DB_PREFIX_.'htl_room_information` AS ri ';
                         if ($adult || $children) {
                             $sql .= 'INNER JOIN '._DB_PREFIX_.'htl_room_type AS rt ON (rt.id_product = ri.id_product AND rt.id_hotel = ri.id_hotel';
@@ -213,18 +213,18 @@
 
                     if ($search_partial) {
                         $sql1 = "SELECT bd.`id_product`, bd.`id_room`, bd.`id_hotel`, bd.`id_customer`, bd.`booking_type`, bd.`id_status` AS booking_status, bd.`comment` AS `room_comment`, rf.`room_num`, bd.`date_from`, bd.`date_to`
-							FROM `"._DB_PREFIX_."htl_booking_detail` AS bd 
+							FROM `"._DB_PREFIX_."htl_booking_detail` AS bd
 							INNER JOIN `"._DB_PREFIX_."htl_room_information` AS rf ON (rf.`id` = bd.`id_room` AND rf.`id_status` = 1)
 							WHERE bd.`id_hotel`=".$hotel_id." AND bd.`id_product`=".$room_type['id_product']." AND bd.`is_back_order` = 0 AND bd.`is_refunded` = 0 AND ((bd.`date_from` <= '$date_from' AND bd.`date_to` > '$date_from' AND bd.`date_to` < '$date_to') OR (bd.`date_from` > '$date_from' AND bd.`date_from` < '$date_to' AND bd.`date_to` >= '$date_to') OR (bd.`date_from` > '$date_from' AND bd.`date_from` < '$date_to' AND bd.`date_to` < '$date_to'))";
 
                         $sql2 = "SELECT hri.`id_product`, hrdd.`id_room`, hri.`id_hotel`, '0' AS `id_customer`, '0' AS `booking_type`, '0' AS `booking_status`, '0' AS `room_comment`, hri.`room_num`, hrdd.`date_from`, hrdd.`date_to`
-							FROM `"._DB_PREFIX_."htl_room_information` AS hri 
+							FROM `"._DB_PREFIX_."htl_room_information` AS hri
 							INNER JOIN `"._DB_PREFIX_."htl_room_disable_dates` AS hrdd ON (hrdd.`id_room_type` = hri.`id_product` AND hrdd.`id_room` = hri.`id`)
 							WHERE hri.`id_hotel`=".$hotel_id." AND hri.`id_product`=".$room_type['id_product']." AND hri.`id_status` = 3 AND ((hrdd.`date_from` <= '$date_from' AND hrdd.`date_to` > '$date_from' AND hrdd.`date_to` < '$date_to') OR (hrdd.`date_from` > '$date_from' AND hrdd.`date_from` < '$date_to' AND hrdd.`date_to` >= '$date_to') OR (hrdd.`date_from` > '$date_from' AND hrdd.`date_from` < '$date_to' AND hrdd.`date_to` < '$date_to'))";
                         $sql = $sql1.' UNION '.$sql2;
 
                         // NOTE:: Before code if written to user order by with union
-                        $sql = "SELECT s.* 
+                        $sql = "SELECT s.*
                                 FROM (".$sql.") AS s
                                 ORDER BY s.`id_room`";
                         // Ends Here
@@ -423,15 +423,15 @@
          * [createDateRangeArray :: This function will return array of dates from date_form to date_to (Not including date_to)
          * 							if ($for_check == 0)
          * 							{
-         * 								Then this function will remove these dates from $allReqDates this array 
+         * 								Then this function will remove these dates from $allReqDates this array
          * 							}].
          *
          * @param [date] $strDateFrom [Start date of the date range]
          * @param [date] $strDateTo   [End date of the date range]
-         * @param int    $for_check   [ 
+         * @param int    $for_check   [
          *                            if ($for_check == 0)
          *                            {
-         *                            Then this function will remove these dates from $allReqDates this array 
+         *                            Then this function will remove these dates from $allReqDates this array
          *                            }
          *                            if ($for_check == 0)
          *                            {
@@ -1194,7 +1194,7 @@
                 $objCustomerAddress->address1 = 'New York, US';
                 $objCustomerAddress->postcode = '10001';
                 $objCustomerAddress->city = 'New York';
-                $objCustomerAddress->phone_mobile = 0987654321;
+                $objCustomerAddress->phone_mobile = '0987654321';
                 $objCustomerAddress->save();
                 return $objCustomerAddress->id;
             }

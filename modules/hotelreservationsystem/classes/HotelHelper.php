@@ -87,6 +87,10 @@ class HotelHelper
         $home_banner_default_title = 'Four Lessons Hotel Greshon Palace';
         $home_banner_default_content = 'Tofu helvetica leggings tattooed. Skateboard blue bottle green juice, brooklyn cardigan kitsch fap narwhal organic flexitarian.';
 
+        Configuration::updateValue('WK_HOTEL_CONTACT_PAGE_HEADER', 'Get in touch with us');
+        Configuration::updateValue('WK_HOTEL_CONTACT_PAGE_CONTENT', 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry`s standard dummy text.');
+        Configuration::updateValue('WK_HOTEL_LOCAWK_HOTEL_GLOBAL_ADDRESS', 'Contrary to popular belief, Lorem Ipsum is not simply random text.');
+
         Configuration::updateValue('WK_HOTEL_LOCATION_ENABLE', 1);
         Configuration::updateValue('WK_ROOM_LEFT_WARNING_NUMBER', 10);
         Configuration::updateValue('WK_HOTEL_GLOBAL_CONTACT_EMAIL', 'globalhotelemail@hotels.com');

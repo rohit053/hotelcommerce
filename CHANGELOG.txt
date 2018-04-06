@@ -1,4 +1,23 @@
 ####################################
+# V1.1.2
+####################################
+
+## Added Features:
+
+[+] FO : On contact us page contact header, contact content, global address are now dynamic. Enter values from AdminGeneralSettingsController.
+
+
+## Bug/Issues Resolved:
+
+[-] MO : Resolved :: hotelreservationsystem - Parent:: replaced with parent:: in classes/hotelHotelBranchInformation.php which was creating problems in installation.
+[+] MO : Resolved :: hotelreservationsystem:: HotelBookingDetail.php : phone number sent as string '0987654321'from 0987654321. Giving error while installing Qloapps with php7.0.0 .
+
+[+] MO : Resolved :: wktestimonialblock:: Error while saving or updating testimonials by admin.
+
+
+
+
+####################################
 # V1.1.1
 ####################################
 

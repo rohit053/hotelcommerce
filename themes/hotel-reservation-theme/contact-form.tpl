@@ -24,24 +24,38 @@
 	{include file="$tpl_dir./errors.tpl"}
 	<div class="row margin-top-50">
 		<div class="col-sm-6">
-			<p class="contact-header">{l s='Get in touch with us'}</p>
-			<p class="contact-desc">{l s='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry`s standard dummy text.'}</p>
-			<div class="col-sm-12 contact-subdiv">
-				<p>
-					<i class="icon-map-marker cont_icon_map"></i>
-					<span> {l s='Contrary to popular belief, Lorem Ipsum is not simply random text.'}</span>
-				</p>
-				<p>
-					<i class="icon-mobile-phone cont_icon_phone"></i>
-					<span> {if isset($global_phone_num) && $global_phone_num }{$global_phone_num}{else}{l s='No contact available'}{/if}</span>
-				</p>
-				<p>
-					<i class="icon-envelope cont_icon_enve"></i>
-					<span> {if isset($global_email) && $global_email }{$global_email}{else}{l s='No email available'}{/if}</span>
-				</p>
+			<p class="contact-header">
+				{if isset($contact_us_header) && $contact_us_header }{$contact_us_header}{/if}
+			</p>
+			<p class="contact-desc">
+				{if isset($contact_us_content) && $contact_us_content }{$contact_us_content}{/if}
+			</p>
+			<div class="contact-subdiv">
+				<div class="row">
+					<p class="col-sm-1 col-xs-2"><i class="icon-map-marker cont_icon_map"></i></p>
+					<div class="col-sm-11 col-xs-10">
+						{if isset($global_address) && $global_address }{$global_address}{else}{l s='No Address available'}{/if}
+					</div>
+				</div>
+				<div class="row">
+					<p class="col-sm-1 col-xs-2">
+						<i class="icon-mobile-phone cont_icon_phone"></i>
+					</p>
+					<div class="col-sm-11 col-xs-10">
+						{if isset($global_phone_num) && $global_phone_num }{$global_phone_num}{else}{l s='No contact available'}{/if}
+					</div>
+				</div>
+				<div class="row">
+					<p class="col-sm-1 col-xs-2">
+						<i class="icon-envelope cont_icon_enve"></i>
+					</p>
+					<div class="col-sm-11 col-xs-10">
+						{if isset($global_email) && $global_email }{$global_email}{else}{l s='No email available'}{/if}
+					</div>
+				</div>
 			</div>
 		</div>
-		
+
 		<div class="col-sm-6">
 			<form action="{$request_uri}" method="post" class="contact-form-box" enctype="multipart/form-data">
 				{if isset($customerThread.id_contact) && $customerThread.id_contact && $contacts|count}
@@ -86,17 +100,17 @@
 									<li  value="{$contact.id_contact|intval}"{if isset($smarty.request.id_contact) && $smarty.request.id_contact == $contact.id_contact} selected="selected"{/if}>{$contact.name|escape:'html':'UTF-8'}
 									</li>
 								{/foreach}
-                            
+
                                 {if isset($all_hotels_info) && $all_hotels_info}
 									{foreach from=$all_hotels_info key=htl_k item=htl_v}
 									{/foreach}
-								{/if} 
+								{/if}
                             </ul>
                         </div>
                     </div>
 
 					<!-- End -->
-					
+
 				{/if}
 				{*<input type="text" placeholder="Name" class="form-control contact_input">*}
 				{if isset($customerThread.email)}

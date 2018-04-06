@@ -44,6 +44,26 @@ class AdminHotelGeneralSettingsController extends ModuleAdminController
                         'type' => 'text',
                         'visibility' => Shop::CONTEXT_ALL,
                     ),
+                    'WK_HOTEL_CONTACT_PAGE_HEADER' => array(
+                        'title' => $this->l('Contact Us Page Header'),
+                        'hint' => $this->l('This content will be shown in the contact us page as contact header.'),
+                        'type' => 'text',
+                        'isCleanHtml' => true,
+                        'id' => 'htl_contact_header',
+                    ),
+                    'WK_HOTEL_CONTACT_PAGE_CONTENT' => array(
+                        'title' => $this->l('Contact Us Page Content'),
+                        'hint' => $this->l('This content will be shown in the contact us page as contact description.'),
+                        'type' => 'textarea',
+                        'isCleanHtml' => true,
+                        'id' => 'htl_contact_content',
+                    ),
+                    'WK_HOTEL_GLOBAL_ADDRESS' => array(
+                        'title' => $this->l('Global Address'),
+                        'hint' => $this->l('Hotel global address which you want to show to your customers. It will be shown at contact us page.'),
+                        'type' => 'text',
+                        'isCleanHtml' => true,
+                    ),
                     'WK_HOTEL_GLOBAL_CONTACT_EMAIL' => array(
                         'title' => $this->l('Global Email'),
                         'hint' => $this->l('Email which you want to show a customer to email you.'),
@@ -206,7 +226,7 @@ class AdminHotelGeneralSettingsController extends ModuleAdminController
                         ),
                         'hint' => $this->l('If yes, only active hotels will be display on map'),
                     ),
-                    
+
                 ),
                 'submit' => array(
                                 'title' => $this->l('Save'),

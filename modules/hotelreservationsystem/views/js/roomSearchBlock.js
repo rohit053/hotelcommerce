@@ -203,7 +203,7 @@ $(document).ready(function() {
         });
         $('#id_hotel').val(id_hotel);
         $('#hotel_cat_id').val(hotel_cat_id);
-        $('#hotel_cat_name').html(hotel_name);
+        $('#selected_range_text').html(hotel_name);
     });
 
     $(".hotel_cat_id_btn").on("click", function() {

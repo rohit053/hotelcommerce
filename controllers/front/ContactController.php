@@ -212,7 +212,7 @@ class ContactControllerCore extends FrontController
 		$this->addCSS(_THEME_CSS_DIR_.'contact-form.css');
 		$this->addJS(_THEME_JS_DIR_.'contact-form.js');
 		$this->addJS(_PS_JS_DIR_.'validate.js');
-		
+
 		// GOOGLE MAP
         $language = $this->context->language;
         $country = $this->context->country;
@@ -257,10 +257,13 @@ class ContactControllerCore extends FrontController
 		$global_phone_num = Configuration::get('WK_HOTEL_GLOBAL_CONTACT_NUMBER');
 		$global_email = Configuration::get('WK_HOTEL_GLOBAL_CONTACT_EMAIL');
 		$this->context->smarty->assign(array(
-			'global_phone_num' => $global_phone_num,
-			'global_email' => $global_email,
-			'contacts' => Contact::getContacts($this->context->language->id),
-			'message' => html_entity_decode(Tools::getValue('message'))
+			'global_phone_num' => Configuration::get('WK_HOTEL_GLOBAL_CONTACT_NUMBER'),
+            'global_email' => Configuration::get('WK_HOTEL_GLOBAL_CONTACT_EMAIL'),
+            'global_address' => Configuration::get('WK_HOTEL_GLOBAL_ADDRESS'),
+            'contact_us_header' => Configuration::get('WK_HOTEL_CONTACT_PAGE_HEADER'),
+            'contact_us_content' => Configuration::get('WK_HOTEL_CONTACT_PAGE_CONTENT'),
+            'contacts' => Contact::getContacts($this->context->language->id),
+            'message' => html_entity_decode(Tools::getValue('message'))
 		));
 
 		//By webkul to send hotels Map Informations for google Map.

@@ -1,20 +1,20 @@
 <?php
-    class HotelImage extends ObjectModel
-    {
-        public $id;
-        public $hotel_id;
-        public $hotel_image_id;
-        public $active;
+class HotelImage extends ObjectModel
+{
+    public $id;
+    public $hotel_id;
+    public $hotel_image_id;
+    public $active;
 
-        public static $definition = array(
-            'table' => 'htl_image',
-            'primary' => 'id',
-            'fields' => array(
-                'id_hotel' => array('type' => self::TYPE_INT, 'validate' => 'isInt'),
-                'hotel_image_id' => array('type' => self::TYPE_STRING),
-                'active' => array('type' => self::TYPE_BOOL,'validate' => 'isBool')
-            ),
-        );
+    public static $definition = array(
+        'table' => 'htl_image',
+        'primary' => 'id',
+        'fields' => array(
+            'id_hotel' => array('type' => self::TYPE_INT, 'validate' => 'isInt'),
+            'hotel_image_id' => array('type' => self::TYPE_STRING),
+            'active' => array('type' => self::TYPE_BOOL,'validate' => 'isBool')
+        ),
+    );
 
     /**
      * [getAllImagesByHotelId :: To get all images data of a hotel by hotel id]
@@ -70,4 +70,22 @@
         }
         return true;
     }
+
+    /**
+     * [validAddHotelMainImage :: To validate the image of the hotel before saving it]
+     * @param  [array] $image [variable having image information of the hotel]
+     * @return [boolean]        [returns true if image is valid]
+     */
+    public static function validateImage($image)
+    {
+        if ($image['size'] > 0) {
+            if ($image['tmp_name'] != "") {
+                if (!ImageManager::isCorrectImageFileExt($image['name'])) {
+                    return true;
+                }
+            }
+        } else {
+            return true;
+        }
     }
+}
